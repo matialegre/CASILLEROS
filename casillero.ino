@@ -160,43 +160,44 @@ void loop() {
         break;
       }
 
-    case verificarContrasena: {
-        Serial.println("Estado Verificar Contrasena");
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Ingresar");
-        lcd.setCursor(0, 1);
-        lcd.print("Contrasena");
-        delay(2000);
-        String enteredPassword = ObtenerContrasena();
-        if (enteredPassword == casilleros[Nro - 1].password) {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Acceso");
-          lcd.setCursor(0, 1);
-          lcd.print("Concedido");
-          digitalWrite(LiberaPestillo[Nro - 1], LOW); // abre la puerta
-          digitalWrite(ledVerde[Nro - 1], HIGH); // abre la puerta
-          digitalWrite(ledRojo[Nro - 1], LOW); // abre la puerta
-          unsigned long startTime = millis();
-          while (millis() - startTime < 10000 && digitalRead(sensorPuerta[Nro - 1]) == LOW) {
-            // Espera hasta que pasen 10 segundos o hasta que el sensor de la puerta detecte que la puerta está abierta
-          }
-          delay(500);
-          digitalWrite(LiberaPestillo[Nro - 1], HIGH); // cierra la puerta
-          casilleros[Nro - 1].Ocupacion = false; // marca el casillero como desocupado
-          Actual = seleccionarCasillero;
-        } else {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Acceso");
-          lcd.setCursor(0, 1);
-          lcd.print("Denegado");
-          Actual = seleccionarCasillero;
-        }
+case verificarContrasena: {
+  Serial.println("Estado Verificar Contrasena");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Ingresar");
+  lcd.setCursor(0, 1);
+  lcd.print("Contrasena");
+  delay(2000);
+  String enteredPassword = ObtenerContrasena();
+  if (enteredPassword == casilleros[Nro - 1].password) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Acceso");
+    lcd.setCursor(0, 1);
+    lcd.print("Concedido");
+    digitalWrite(LiberaPestillo[Nro - 1], LOW); // abre la puerta
 
-        break;
-      }
+    unsigned long startTime = millis();
+    while (millis() - startTime < 10000 && digitalRead(sensorPuerta[Nro - 1]) == LOW) {
+      // Espera hasta que pasen 10 segundos o hasta que el sensor de la puerta detecte que la puerta está abierta
+    }
+
+    digitalWrite(LiberaPestillo[Nro - 1], HIGH); // cierra la puerta
+    digitalWrite(ledVerde[Nro - 1], HIGH); // enciende la luz verde
+    digitalWrite(ledRojo[Nro - 1], LOW); // apaga la luz roja
+    casilleros[Nro - 1].Ocupacion = false; // marca el casillero como desocupado
+    Actual = seleccionarCasillero;
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Acceso");
+    lcd.setCursor(0, 1);
+    lcd.print("Denegado");
+    Actual = seleccionarCasillero;
+  }
+  break;
+}
+
     case revisarPuerta: {
         Serial.println("Revisar Puerta");
         Serial.println("Nro");
@@ -248,7 +249,7 @@ lcd.clear();
         digitalWrite(ledRojo[Nro - 1], HIGH);
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Contraseña");
+        lcd.print("Contrasena");
         lcd.setCursor(0, 1);
         lcd.print("guardada");
         Actual = cerrarPuerta;
