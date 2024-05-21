@@ -16,9 +16,11 @@ int Nro;
 String enteredPassword;
 char key = '\0';
 
+
 //Parametros Generales
 const int cantCasillero = 8;  //cantidad predefinida de casillero
-//String masterKey = ;
+String MasterKEY = "202422";
+
 //Definicion Teclado Matricial
 
 const char* contrasenasTontas[] = {
@@ -64,24 +66,20 @@ struct Casillero {
 Casillero casilleros[8];
 
 enum Estados {
+  MasterPASS,
   Inicializacion,
   seleccionarCasillero,
   revisarPuerta,
   ingresarContrasena,
   verificarContrasena,
-  guardarContrasena,
+  guardarContrasena, //revisar que se use o cambiar
   cerrarPuerta,
 };
-Estados Actual = Inicializacion;
+Estados Actual = MasterPASS;
 void setup() {
   Serial.begin(9600);
   Serial.println("Twisted Transistors - Sistema de Casilleros");
-  lcd.setCursor(0, 0);  // Imprime un mensaje en el LCD
-  lcd.print("Twisted");
-  lcd.setCursor(0, 2);  // Imprime un mensaje en el LCD
-  lcd.print("Transistors");
-  delay(3000);
-  lcd.clear();
+
   //definicion salidas y entradas y led verde como liberado
   for (int i = 0; i < cantCasillero; i++) {
     pinMode(ledRojo[i], OUTPUT);
@@ -104,6 +102,7 @@ void setup() {
   lcd.print("Transistors");
   delay(3000);
   lcd.clear();
+
   for (int i = 0; i < cantCasillero; i++) {
     casilleros[i].Ocupacion = true;  // estado inicial ocupado
   }
@@ -130,6 +129,7 @@ void imprimirEstadoCasilleros() {
 }
 int pepe= 1;
 unsigned long previousMillis = 0;
+String MasterPW= "2024AB";
 
 void loop() {
   static unsigned long previousMillisPrint = 0;
@@ -267,12 +267,6 @@ void loop() {
     case ingresarContrasena:
       {
         Serial.println("Estado Ingresar Contrasena");
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Ingresar");
-        lcd.setCursor(0, 1);
-        lcd.print("Contrasena");
-        delay(2000);
         enteredPassword = ObtenerContrasena();
         casilleros[Nro - 1].password = enteredPassword;
         digitalWrite(ledRojo[Nro - 1], HIGH);
@@ -306,43 +300,101 @@ void loop() {
         break;
       }
     case Inicializacion:
-    if(pepe==1){
-      Serial.println("Inicializacion de casilleros");
+      if(pepe==1)
+      {
+        Serial.println("Inicializacion de casilleros");
+        lcd.setCursor(0, 0);
+        lcd.print("Iniciar Sistema");
+        lcd.setCursor(0, 1);
+        lcd.print("Seleccione BOX");
+        while (key != '*') {
+          key = keypad.getKey();
+          Nro = int(key - '0');
+          if (Nro > 0 && Nro <= 8 && key != '\0') {
+            casilleros[Nro - 1].Ocupacion = false;
+            Serial.println(casilleros[Nro - 1].Ocupacion);
+            lcd.setCursor(0, 2);
+            lcd.print("Box ");
+            lcd.print(Nro);
+            lcd.setCursor(0, 3);
+            lcd.print("Desbloqueado");
+            digitalWrite(ledRojo[Nro - 1], LOW);
+            digitalWrite(ledVerde[Nro - 1], HIGH);
+          }
+        }
+        Actual = seleccionarCasillero;
+        lcd.clear();
+        pepe=0;
+        break;
+      }
+
+    case MasterPASS:
+      lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("Iniciar Sistema");
+      lcd.print("Inicio Sistema");
       lcd.setCursor(0, 1);
-      lcd.print("Seleccione locker");
-      while (key != '*') {
-        key = keypad.getKey();
-        Nro = int(key - '0');
-        if (Nro > 0 && Nro <= 8 && key != '\0') {
-          casilleros[Nro - 1].Ocupacion = false;
-          Serial.println(casilleros[Nro - 1].Ocupacion);
-          lcd.setCursor(0, 2);
-          lcd.print("Casillero ");
-          lcd.print(Nro);
-          lcd.setCursor(0, 3);
-          lcd.print("Desbloqueado");
-          digitalWrite(ledRojo[Nro - 1], LOW);
-          digitalWrite(ledVerde[Nro - 1], HIGH);
+      lcd.print("Ingresar Clave:");
+      String enteredPassword = "";
+      while (enteredPassword.length() < 10) 
+      {
+        char digit = keypad.getKey();
+        if (digit && digit != 'A' && digit != 'B') {
+        enteredPassword += digit;
+        lcd.setCursor(enteredPassword.length() - 1, 3);  // Asume que quieres imprimir en la cuarta fila
+        lcd.print("*");
+        //Serial.print(digit);
+        }
+        if(digit != '\0')
+          
+          Serial.print(digit);
+        
+        if( digit == 'A') //si presiono A ya confirma de una
+        {
+          Serial.println("Entre a A");
+          if(enteredPassword == MasterKEY)
+          {
+            Serial.println("Cambie a INICIALIZACION");
+            Actual = Inicializacion;   //202422
+            //Carteles de confirmacion en LCD FALTAN
+            break;
+          }
+          else
+          { 
+            Serial.println("Entre a else de A");
+            enteredPassword = "";
+            lcd.setCursor(0, 1);
+            lcd.print("Clave Invalida");
+            delay(1000);
+            break;
+          }
+        }
+        else if (digit == 'B' && enteredPassword.length() > 0) 
+        {
+          enteredPassword = enteredPassword.substring(0, enteredPassword.length() - 1); // Borra el último carácter ingresado
+          lcd.setCursor(enteredPassword.length(), 3);
+          lcd.print(" ");
+          Serial.print("Borré algo: ");
+          Serial.println(enteredPassword);
         }
       }
-      Actual = seleccionarCasillero;
-      lcd.clear();
-      pepe=0;
-      break;
-      }
+      Serial.println("Sali del while");
+    break;
   }
 }
 String ObtenerContrasena() {
   //lcd.setCursor(0, 2);
   //lcd.print("Contrasena:");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Ingresar");
+  lcd.setCursor(0, 1);
+  lcd.print("Clave:");
   String enteredPassword = "";
   while (enteredPassword.length() < 4) {
     char digit = keypad.getKey();
     if (digit && digit != '*' && digit != '#') {
       enteredPassword += digit;
-      lcd.setCursor(enteredPassword.length() - 1, 3);  // Asume que quieres imprimir en la primera fila
+      lcd.setCursor(enteredPassword.length() - 1, 3);  // Asume que quieres imprimir en la cuarta fila
       lcd.print("*");
       Serial.print(digit);
     }
@@ -350,20 +402,27 @@ String ObtenerContrasena() {
     { 
       enteredPassword = "";
       
-      lcd.setCursor(0, 3);  // Asume que quieres imprimir en la primera fila
+      lcd.setCursor(0, 3);
       lcd.print("Caracter Invalido");
+
    }
 
     for (const char* tonta : contrasenasTontas) 
     {
-      if (contrasena == tonta)
+      if (enteredPassword == tonta)
        {
           enteredPassword = "";
+          lcd.clear();
+          lcd.setCursor(0, 1);
+          lcd.print("Clave Invalida");
+          lcd.setCursor(0,2);
+          lcd.print("Ingrese Nuevamente");
+          delay(1000);
+          lcd.clear();
       }
     }
 
   }
-
 
   return enteredPassword;
 }
@@ -378,4 +437,16 @@ void checkDoor(int Nro, int alarmPin) {
   digitalWrite(alarmPin, LOW);  // Apaga la alarma cuando la puerta se cierra
 }
 
+void DisplayPrints(int ubica)
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Box ");
+  lcd.print(Nro);
+  lcd.setCursor(0, 1);
+  lcd.print("Libres");
+
+  lcd.setCursor(0, 2);
+  
+} //TERMINAR DE FORMATEAR
 
